@@ -22,7 +22,7 @@ try {
 
 
 
-
+/*
 $host = 'sql301.byethost18.com';
 $db = 'b18_42316990_leave_system';
 $user = 'b18_42316990';
@@ -42,3 +42,4 @@ try {
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
+    */
