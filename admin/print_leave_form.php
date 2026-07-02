@@ -146,17 +146,32 @@ $salaryDisplay = ($salary !== null && $salary !== '') ? number_format((float)$sa
 
 $officeDepartment = trim((string)($row['department'] ?? ''));
 $position = trim((string)($row['position'] ?? ''));
+$daysWithPay = trim((string)($row['days_with_pay'] ?? ''));
+$daysWithoutPay = trim((string)($row['days_without_pay'] ?? ''));
+$othersSpecify = trim((string)($row['others_specify'] ?? ''));
+$disapprovedDueTo = trim((string)($row['disapproved_due_to'] ?? ''));
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Leave Form</title>
+    <title>Application for Leave</title>
     <style>
+        :root {
+            --a4-width: 210mm;
+            --a4-height: 297mm;
+            --page-pad-x: 7mm;
+            --page-pad-y: 6mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: "Times New Roman", serif;
-            background: #f2f2f2;
+            font-family: "Times New Roman", Times, serif;
+            background: #d8dde3;
             margin: 0;
             padding: 20px;
             color: #111;
@@ -190,13 +205,26 @@ $position = trim((string)($row['position'] ?? ''));
             background: #6c757d;
         }
 
+        .print-hint {
+            flex: 1 1 100%;
+            margin: 0;
+            padding: 10px 12px;
+            background: #fff8e1;
+            border: 1px solid #f0d060;
+            border-radius: 6px;
+            color: #6b4e00;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
         .paper {
-            width: 850px;
+            width: var(--a4-width);
+            min-height: var(--a4-height);
             margin: 0 auto;
             background: #fff;
-            padding: 12px 16px 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-            border: 1px solid #ccc;
+            padding: var(--page-pad-y) var(--page-pad-x);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+            border: 1px solid #bbb;
         }
 
         .center { text-align: center; }
@@ -206,11 +234,11 @@ $position = trim((string)($row['position'] ?? ''));
         .tiny { font-size: 10px; }
 
         .title {
-            font-family: Arial, sans-serif;
-            font-size: 24px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 22px;
             font-weight: bold;
             letter-spacing: 0.2px;
-            margin: 8px 0 8px;
+            margin: 6px 0 8px;
             text-align: center;
             width: 100%;
             display: block;
@@ -250,8 +278,8 @@ $position = trim((string)($row['position'] ?? ''));
     justify-content: center;
 }
         .deped-logo {
-            width: 62px;
-            height: 62px;
+            width: 58px;
+            height: 58px;
             object-fit: contain;
             flex: 0 0 auto;
         }
@@ -293,6 +321,14 @@ $position = trim((string)($row['position'] ?? ''));
             text-align: center;
         }
 
+        .top-field-line {
+            display: block;
+            border-bottom: 1px solid #222;
+            margin-top: 4px;
+            padding: 0 3px 1px;
+            font-weight: bold;
+        }
+
         .top-name-hints {
             display: inline-flex;
             gap: 64px;
@@ -325,28 +361,31 @@ $position = trim((string)($row['position'] ?? ''));
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 11px;
+            font-size: 10px;
+            line-height: 1.22;
         }
 
         .form-table td,
         .form-table th {
-            border: 1px solid #444;
-            padding: 4px 5px;
+            border: 1px solid #222;
+            padding: 3px 4px;
             vertical-align: top;
         }
 
         .section-head {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
             font-weight: bold;
             text-align: center;
-            background: #f5f5f5;
+            background: #ececec;
+            padding: 4px;
         }
 
         .subhead {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
             font-weight: bold;
+            margin-bottom: 2px;
         }
 
         .line {
@@ -371,46 +410,66 @@ $position = trim((string)($row['position'] ?? ''));
         }
 
         .checkbox-line {
-            margin: 1px 0;
-            line-height: 1.3;
+            margin: 0;
+            line-height: 1.18;
         }
 
         .box,
         .checked-box {
             display: inline-block;
-            width: 11px;
-            height: 11px;
+            width: 10px;
+            height: 10px;
             border: 1px solid #222;
-            margin-right: 6px;
+            margin-right: 5px;
             vertical-align: middle;
             position: relative;
+            flex-shrink: 0;
         }
 
         .checked-box::after {
             content: "✓";
             position: absolute;
-            left: 1px;
-            top: -3px;
-            font-size: 13px;
+            left: 0;
+            top: -4px;
+            font-size: 12px;
             font-weight: bold;
+            line-height: 1;
         }
 
         .credits-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6px;
-            font-size: 12px;
+            margin-top: 4px;
+            font-size: 10px;
         }
 
         .credits-table th,
         .credits-table td {
-            border: 1px solid #444;
-            padding: 3px;
+            border: 1px solid #222;
+            padding: 2px 3px;
             text-align: center;
         }
 
+        .section-7-cell,
+        .section-7b-cell {
+            width: 50%;
+            height: 168px;
+            position: relative;
+            vertical-align: top;
+            padding-bottom: 52px !important;
+        }
+
+        .section-7-cell .signature-block,
+        .section-7b-cell .signature-block {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 4px;
+            margin-top: 0;
+        }
+
         .signature-block {
-            margin-top: 16px;
+            margin-top: 10px;
             text-align: center;
         }
 
@@ -418,21 +477,27 @@ $position = trim((string)($row['position'] ?? ''));
             font-weight: bold;
             text-transform: uppercase;
             display: block;
+            font-size: 10px;
+            letter-spacing: 0.2px;
+        }
+
+        .signature-line-under {
+            border-bottom: 1px solid #222;
+            width: 210px;
+            margin: 2px auto;
+            height: 1px;
+        }
+
+        .signature-position {
+            font-size: 10px;
         }
 
         .signature-line {
             border-top: 1px solid #222;
-            margin-top: 22px;
-            padding-top: 3px;
+            margin-top: 18px;
+            padding-top: 2px;
+            font-size: 9px;
         }
-        .signature-line-under {
-    border-bottom: 1px solid #222;
-    width: 220px;
-    margin: 4px auto 4px; /* space above & below line */
-}
-.signature-position {
-    font-size: 12px;
-}
 
         .approval-lines {
             margin-top: 6px;
@@ -446,51 +511,66 @@ $position = trim((string)($row['position'] ?? ''));
         .approval-lines .fill-line {
             display: inline-block;
             border-bottom: 1px solid #222;
-            width: 120px;
-            height: 11px;
-            vertical-align: middle;
+            min-width: 72px;
+            width: 72px;
+            min-height: 12px;
+            vertical-align: bottom;
             margin-right: 4px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.1;
+            padding: 0 2px 1px;
         }
 
         .action-merged-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 0;
+        }
+
+        .action-merged-grid > div {
+            padding: 0 4px;
+        }
+
+        .action-merged-grid > div + div {
+            border-left: 1px solid #222;
+            margin-left: -1px;
+            padding-left: 8px;
         }
 
         .action-shared-signatory {
-            margin-top: 10px;
+            margin-top: 8px;
+            padding-top: 4px;
             text-align: center;
+            border-top: 1px solid #222;
         }
 
-        .action-shared-signatory .signature-line {
-            margin: 0 auto;
-            max-width: 300px;
+        .section-7-bottom-cell {
+            padding: 0 !important;
         }
 
-        .section-7-cell {
-            min-height: 220px;
+        .section-7-bottom-cell > .action-merged-grid,
+        .section-7-bottom-cell > .action-shared-signatory {
+            padding: 4px 4px 0;
         }
 
-        .section-7b-cell {
-            min-height: 220px;
+        .section-7-bottom-cell > .action-shared-signatory {
+            padding-bottom: 4px;
         }
 
-        .bottom-signature-cell {
-            height: 90px;
-            vertical-align: bottom !important;
-            text-align: center;
-        }
-
-        .spacer-8 { height: 8px; }
+        .spacer-8 { height: 4px; }
 
         @media print {
+            html,
             body {
                 background: #fff;
                 padding: 0;
+                margin: 0;
+                width: 100%;
             }
 
-            .toolbar {
+            .toolbar,
+            .print-hint {
                 display: none !important;
             }
 
@@ -499,25 +579,39 @@ $position = trim((string)($row['position'] ?? ''));
                 border: none;
                 margin: 0;
                 width: 100%;
-                padding: 6px 8px;
+                max-width: none;
+                min-height: auto;
+                padding: var(--page-pad-y) var(--page-pad-x);
+                page-break-after: avoid;
+                page-break-inside: avoid;
             }
 
             @page {
                 size: A4 portrait;
-                margin: 6mm;
+                margin: 0;
+            }
+
+            .section-head {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
         }
+
         .head-lines {
-    text-align: center;
-    width: 100%;
-}
+            text-align: center;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
     <div class="toolbar">
-        <button type="button" onclick="window.print()">Print Form</button>
-        <button type="button" class="download-btn" onclick="window.print()">Download PDF</button>
+        <button type="button" id="print_btn">Print Form</button>
+        <button type="button" class="download-btn" id="download_btn">Download PDF</button>
         <a href="leave_requests.php" class="back-btn">Back</a>
+        <p class="print-hint">
+            To remove the URL and page number at the bottom, open <strong>More settings</strong> in the print dialog
+            and turn off <strong>Headers and footers</strong>.
+        </p>
     </div>
 
     <div class="paper">
@@ -546,7 +640,7 @@ $position = trim((string)($row['position'] ?? ''));
         <table class="form-table">
             <tr>
                 <td colspan="2" style="padding:0;border:none;">
-                <table class="top-split" style="border:1px solid #444;">
+                <table class="top-split" style="border:1px solid #222;">
                         <tr>
                             <td style="width:37%;">
                                 <span class="top-section-label">1. &nbsp; OFFICE/DEPARTMENT</span>
@@ -567,19 +661,19 @@ $position = trim((string)($row['position'] ?? ''));
             </tr>
             <tr>
                 <td colspan="2" style="padding:0;border:none;">
-                <table class="top-split-row" style="border:1px solid #444;">
+                <table class="top-split-row" style="border:1px solid #222;">
                         <tr>
                             <td style="width:37%;">
                                 <span class="top-section-label">3. &nbsp; DATE OF FILING</span>
-                                <span class="line" style="min-width:170px; font-weight:bold;"><?php echo e($dateFiled); ?></span>
+                                <span class="top-field-line" style="min-width:170px;"><?php echo e($dateFiled); ?></span>
                             </td>
                             <td style="width:43%;">
                                 <span class="top-section-label">4. &nbsp; POSITION</span>
-                                <span class="line" style="min-width:180px; font-weight:bold;"><?php echo line_value($position); ?></span>
+                                <span class="top-field-line" style="min-width:180px;"><?php echo line_value($position); ?></span>
                             </td>
                             <td style="width:20%;">
                                 <span class="top-section-label">5. &nbsp; SALARY</span>
-                                <span class="line-short" style="min-width:90px; font-weight:bold;"><?php echo line_value($salaryDisplay); ?></span>
+                                <span class="top-field-line" style="min-width:90px;"><?php echo line_value($salaryDisplay); ?></span>
                             </td>
                         </tr>
                     </table>
@@ -711,10 +805,10 @@ $position = trim((string)($row['position'] ?? ''));
                     </table>
 
                     <div class="signature-block">
-    <div class="signature-name"><?php echo line_value($adminName); ?></div>
-    <div class="signature-line-under"></div>
-    <div class="signature-position"><?php echo line_value($adminPosition); ?></div>
-</div>
+                        <div class="signature-name"><?php echo line_value($adminName); ?></div>
+                        <div class="signature-line-under"></div>
+                        <div class="signature-position"><?php echo line_value($adminPosition); ?></div>
+                    </div>
                 </td>
 
                 <td style="width:50%;" class="section-7b-cell">
@@ -729,53 +823,45 @@ $position = trim((string)($row['position'] ?? ''));
                     <div class="line-full"><?php echo '&nbsp;'; ?></div>
 
                     <div class="signature-block">
-    <div class="signature-name"><?php echo line_value($recommendationName); ?></div>
-    <div class="signature-line-under"></div>
-    <div class="signature-position"><?php echo line_value($recommendationPosition); ?></div>
-</div>
+                        <div class="signature-name"><?php echo line_value($recommendationName); ?></div>
+                        <div class="signature-line-under"></div>
+                        <div class="signature-position"><?php echo line_value($recommendationPosition); ?></div>
+                    </div>
                 </td>
             </tr>
 
             <tr>
-                <td colspan="2">
+                <td colspan="2" class="section-7-bottom-cell">
                     <div class="action-merged-grid">
                         <div>
                             <div class="subhead">7.C APPROVED FOR:</div>
                             <div class="approval-lines">
-                                <div class="row"><span class="fill-line"></span> days with pay</div>
-                                <div class="row"><span class="fill-line"></span> days without pay</div>
-                                <div class="row"><span class="fill-line"></span> others (Specify)</div>
-                            </div>
-
-                            <div style="margin-top:8px;">
-                                <?php if (trim((string)($row['days_with_pay'] ?? '')) !== ''): ?>
-                                    <div><?php echo e((string)$row['days_with_pay']); ?> day(s) with pay</div>
-                                <?php endif; ?>
-
-                                <?php if (trim((string)($row['days_without_pay'] ?? '')) !== ''): ?>
-                                    <div><?php echo e((string)$row['days_without_pay']); ?> day(s) without pay</div>
-                                <?php endif; ?>
-
-                                <?php if (trim((string)($row['others_specify'] ?? '')) !== ''): ?>
-                                    <div><?php echo e((string)$row['others_specify']); ?></div>
-                                <?php endif; ?>
+                                <div class="row">
+                                    <span class="fill-line"><?php echo line_value($daysWithPay); ?></span> days with pay
+                                </div>
+                                <div class="row">
+                                    <span class="fill-line"><?php echo line_value($daysWithoutPay); ?></span> days without pay
+                                </div>
+                                <div class="row">
+                                    <span class="fill-line"><?php echo line_value($othersSpecify); ?></span> others (Specify)
+                                </div>
                             </div>
                         </div>
 
                         <div>
                             <div class="subhead">7.D DISAPPROVED DUE TO:</div>
-                            <div class="line-full"><?php echo line_value($row['disapproved_due_to'] ?? ''); ?></div>
+                            <div class="line-full"><?php echo line_value($disapprovedDueTo); ?></div>
                             <div class="line-full"><?php echo '&nbsp;'; ?></div>
                             <div class="line-full"><?php echo '&nbsp;'; ?></div>
                         </div>
                     </div>
 
                     <div class="action-shared-signatory">
-                    <div class="signature-block">
-    <div class="signature-name"><?php echo line_value($finalActionName); ?></div>
-    <div class="signature-line-under"></div>
-    <div class="signature-position"><?php echo line_value($finalActionPosition); ?></div>
-</div>
+                        <div class="signature-block">
+                            <div class="signature-name"><?php echo line_value($finalActionName); ?></div>
+                            <div class="signature-line-under"></div>
+                            <div class="signature-position"><?php echo line_value($finalActionPosition); ?></div>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -783,8 +869,22 @@ $position = trim((string)($row['position'] ?? ''));
     </div>
 
     <script>
-        // The "Download PDF" button uses the browser print dialog.
-        // Choose "Save as PDF" in the print destination.
+        (function () {
+            var printBtn = document.getElementById('print_btn');
+            var downloadBtn = document.getElementById('download_btn');
+
+            function printForm() {
+                window.print();
+            }
+
+            if (printBtn) {
+                printBtn.addEventListener('click', printForm);
+            }
+
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', printForm);
+            }
+        })();
     </script>
 </body>
 </html>

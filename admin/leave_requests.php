@@ -199,6 +199,121 @@ if (!isAdmin()) {
             color: #721c24;
         }
 
+        .page-toolbar {
+            padding: 16px 15px 0;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 14px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            min-height: 38px;
+            font-size: 14px;
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: end;
+        }
+
+        .btn-reset {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 14px;
+            cursor: pointer;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            background: #6c757d;
+            white-space: nowrap;
+        }
+
+        .status-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .status-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 9px 14px;
+            background: #fff;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .status-tab:hover {
+            border-color: #075db3;
+            color: #075db3;
+        }
+
+        .status-tab.active {
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .status-tab.active[data-status=""] {
+            background: #075db3;
+        }
+
+        .status-tab.active[data-status="pending"] {
+            background: #ffb000;
+        }
+
+        .status-tab.active[data-status="approved"] {
+            background: #28a745;
+        }
+
+        .status-tab.active[data-status="rejected"] {
+            background: #dc3545;
+        }
+
+        .status-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.08);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-tab.active .status-count {
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+        }
+
         .live-hint {
             font-size: 12px;
             color: #6b7280;
@@ -364,6 +479,10 @@ if (!isAdmin()) {
                 grid-template-columns: 1fr;
             }
 
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
             table {
                 min-width: 950px;
             }
@@ -381,6 +500,39 @@ if (!isAdmin()) {
         </div>
 
         <div class="card">
+            <div class="page-toolbar">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="request_search">Search</label>
+                        <input type="text" id="request_search" placeholder="Teacher name, email...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="leave_type_filter">Leave Type</label>
+                        <select id="leave_type_filter">
+                            <option value="">All leave types</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="date_from_filter">Date From</label>
+                        <input type="date" id="date_from_filter">
+                    </div>
+                    <div class="filter-group">
+                        <label for="date_to_filter">Date To</label>
+                        <input type="date" id="date_to_filter">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn-reset" id="clear_request_filters">Reset</button>
+                    </div>
+                </div>
+
+                <nav class="status-nav" id="status_nav" aria-label="Filter by status">
+                    <button type="button" class="status-tab active" data-status="">All <span class="status-count" id="count_all">0</span></button>
+                    <button type="button" class="status-tab" data-status="pending">Pending <span class="status-count" id="count_pending">0</span></button>
+                    <button type="button" class="status-tab" data-status="approved">Approved <span class="status-count" id="count_approved">0</span></button>
+                    <button type="button" class="status-tab" data-status="rejected">Rejected <span class="status-count" id="count_rejected">0</span></button>
+                </nav>
+            </div>
+
             <div class="alert success" id="alert_ok"></div>
             <div class="alert error" id="alert_err"></div>
 
@@ -429,6 +581,19 @@ if (!isAdmin()) {
 
             var latestRequests = [];
             var currentModalId = null;
+            var activeStatus = '';
+
+            var searchInput = document.getElementById('request_search');
+            var leaveTypeFilter = document.getElementById('leave_type_filter');
+            var dateFromFilter = document.getElementById('date_from_filter');
+            var dateToFilter = document.getElementById('date_to_filter');
+            var clearFiltersBtn = document.getElementById('clear_request_filters');
+            var statusNav = document.getElementById('status_nav');
+            var teacherIdFromUrl = (function () {
+                var params = new URLSearchParams(window.location.search);
+                var id = parseInt(params.get('teacher_id') || '', 10);
+                return Number.isFinite(id) && id > 0 ? id : null;
+            })();
 
             function esc(s) {
                 if (s == null) return '';
@@ -466,6 +631,129 @@ if (!isAdmin()) {
                 });
             }
 
+            function updateStatusCounts(requests) {
+                var counts = {
+                    all: 0,
+                    pending: 0,
+                    approved: 0,
+                    rejected: 0
+                };
+
+                (requests || []).forEach(function (req) {
+                    counts.all += 1;
+                    var status = String(req.status || '').toLowerCase();
+                    if (counts[status] != null) {
+                        counts[status] += 1;
+                    }
+                });
+
+                document.getElementById('count_all').textContent = counts.all;
+                document.getElementById('count_pending').textContent = counts.pending;
+                document.getElementById('count_approved').textContent = counts.approved;
+                document.getElementById('count_rejected').textContent = counts.rejected;
+            }
+
+            function populateLeaveTypeFilter(requests) {
+                if (!leaveTypeFilter) return;
+
+                var selected = leaveTypeFilter.value;
+                var types = {};
+
+                (requests || []).forEach(function (req) {
+                    var name = String(req.leave_name || '').trim();
+                    if (name) {
+                        types[name] = true;
+                    }
+                });
+
+                var names = Object.keys(types).sort(function (a, b) {
+                    return a.localeCompare(b);
+                });
+
+                leaveTypeFilter.innerHTML = '<option value="">All leave types</option>';
+                names.forEach(function (name) {
+                    var opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    leaveTypeFilter.appendChild(opt);
+                });
+
+                if (selected && types[selected]) {
+                    leaveTypeFilter.value = selected;
+                }
+            }
+
+            function setActiveStatusTab(status) {
+                activeStatus = status || '';
+                if (!statusNav) return;
+
+                statusNav.querySelectorAll('.status-tab').forEach(function (tab) {
+                    tab.classList.toggle('active', tab.dataset.status === activeStatus);
+                });
+            }
+
+            function applyRequestFilters(requests) {
+                var q = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+                var leaveType = (leaveTypeFilter && leaveTypeFilter.value ? leaveTypeFilter.value : '').trim().toLowerCase();
+                var dateFrom = (dateFromFilter && dateFromFilter.value ? dateFromFilter.value : '').trim();
+                var dateTo = (dateToFilter && dateToFilter.value ? dateToFilter.value : '').trim();
+
+                return (requests || []).filter(function (req) {
+                    if (teacherIdFromUrl && parseInt(req.teacher_id, 10) !== teacherIdFromUrl) {
+                        return false;
+                    }
+
+                    if (activeStatus && String(req.status || '').toLowerCase() !== activeStatus) {
+                        return false;
+                    }
+
+                    if (leaveType && String(req.leave_name || '').trim().toLowerCase() !== leaveType) {
+                        return false;
+                    }
+
+                    if (dateFrom && String(req.date_from || '') < dateFrom) {
+                        return false;
+                    }
+
+                    if (dateTo && String(req.date_to || '') > dateTo) {
+                        return false;
+                    }
+
+                    if (!q) {
+                        return true;
+                    }
+
+                    var haystack = [
+                        req.first_name,
+                        req.middle_name,
+                        req.last_name,
+                        req.email,
+                        req.leave_name
+                    ].map(function (v) {
+                        return String(v || '').toLowerCase();
+                    }).join(' ');
+
+                    return haystack.indexOf(q) !== -1;
+                });
+            }
+
+            function refreshTable() {
+                render(latestRequests);
+            }
+
+            function resetFilters() {
+                if (searchInput) searchInput.value = '';
+                if (leaveTypeFilter) leaveTypeFilter.value = '';
+                if (dateFromFilter) dateFromFilter.value = '';
+                if (dateToFilter) dateToFilter.value = '';
+                teacherIdFromUrl = null;
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+                setActiveStatusTab('');
+                refreshTable();
+            }
+
             function statusBadge(status) {
                 status = status || '';
 
@@ -484,13 +772,21 @@ if (!isAdmin()) {
                 return '<span class="badge default">' + esc(status) + '</span>';
             }
 
-            function openModal(req) {
+            function openModal(req, viewOnly) {
+
+    viewOnly = !!viewOnly;
                 currentModalId = parseInt(req.id, 10);
 
                 var name = (req.last_name || '') + ', ' + (req.first_name || '');
-                var leaveName = req.leave_name || '';
-                var dates = (req.date_from || '') + ' to ' + (req.date_to || '');
-                var status = req.status || '';
+var leaveName = req.leave_name || '';
+var dates = (req.date_from || '') + ' to ' + (req.date_to || '');
+var status = req.status || '';
+
+/*
+    Only allow editing of Reason / Basis
+    when the request is rejected.
+*/
+var reasonReadonly = (status !== 'rejected') ? 'readonly' : '';
 
                 modalTitle.textContent = 'Action Details';
                 modalSubtitle.innerHTML =
@@ -537,11 +833,11 @@ if (!isAdmin()) {
                         '<div class="mini-grid-2" style="margin-top:10px;">' +
                             '<div>' +
                                 '<label class="field-label">Certification Officer Name</label>' +
-                                '<input readonly type="text" value="' + esc(req.certification_officer_name || '') + '">' +
+                                '<input data-save type="text" autocomplete="off" id="certification_officer_name_' + currentModalId + '" value="' + esc(req.certification_officer_name || '') + '">' +
                             '</div>' +
                             '<div>' +
                                 '<label class="field-label">Certification Officer Position</label>' +
-                                '<input readonly type="text" value="' + esc(req.certification_officer_position || '') + '">' +
+                                '<input data-save type="text" autocomplete="off" id="certification_officer_position_' + currentModalId + '" value="' + esc(req.certification_officer_position || '') + '">' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
@@ -551,7 +847,20 @@ if (!isAdmin()) {
                         '<input readonly type="text" value="' + esc(req.recommendation || '') + '">' +
 
                         '<label class="field-label" style="margin-top:10px;">Reason / Basis</label>' +
-                        '<textarea data-save id="recommendation_reason_' + currentModalId + '">' + esc(req.recommendation_reason || '') + '</textarea>' +
+'<textarea data-save ' + reasonReadonly +
+' id="recommendation_reason_' + currentModalId + '">' +
+    esc(req.recommendation_reason || '') +
+'</textarea>' +
+                        '<div class="mini-grid-2" style="margin-top:10px;">' +
+                            '<div>' +
+                                '<label class="field-label">Recommending Officer Name</label>' +
+                                '<input data-save type="text" autocomplete="off" id="recommendation_name_' + currentModalId + '" value="' + esc(req.recommendation_name || '') + '">' +
+                            '</div>' +
+                            '<div>' +
+                                '<label class="field-label">Recommending Officer Position</label>' +
+                                '<input data-save type="text" autocomplete="off" id="recommendation_position_' + currentModalId + '" value="' + esc(req.recommendation_position || '') + '">' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
 
                     '<div class="section-box">' +
@@ -575,6 +884,17 @@ if (!isAdmin()) {
                     '<div class="section-box">' +
                         '<div class="section-title">7D Disapproved Due To</div>' +
                         '<textarea data-save id="disapproved_due_to_' + currentModalId + '">' + esc(req.disapproved_due_to || '') + '</textarea>' +
+
+                        '<div class="mini-grid-2" style="margin-top:10px;">' +
+                            '<div>' +
+                                '<label class="field-label">Authorized Official Name</label>' +
+                                '<input data-save type="text" id="final_action_name_' + currentModalId + '" value="' + esc(req.final_action_name || '') + '">' +
+                            '</div>' +
+                            '<div>' +
+                                '<label class="field-label">Authorized Official Position</label>' +
+                                '<input data-save type="text" id="final_action_position_' + currentModalId + '" value="' + esc(req.final_action_position || '') + '">' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
 
                     '<div class="section-box">' +
@@ -613,6 +933,7 @@ if (!isAdmin()) {
                 modal.classList.add('show');
                 modal.setAttribute('aria-hidden', 'false');
             }
+            
 
             function closeModal() {
                 modal.classList.remove('show');
@@ -624,6 +945,31 @@ if (!isAdmin()) {
 
             async function submitModalAction(action, btn) {
                 if (!currentModalId) return;
+                var confirmMessage = '';
+
+if (action === 'approve') {
+    confirmMessage =
+        'Are you sure you want to APPROVE this leave request?';
+}
+else if (action === 'reject') {
+    confirmMessage =
+        'Are you sure you want to REJECT this leave request?';
+}
+else if (action === 'update_action') {
+    confirmMessage =
+        'Save changes to this leave request?';
+}
+else if (action === 'soft_delete') {
+    confirmMessage =
+        'Delete this leave request?\n\nThis is a soft delete.';
+}
+
+if (
+    confirmMessage &&
+    !window.confirm(confirmMessage)
+) {
+    return;
+}
 
                 hideAlerts();
                 btn.disabled = true;
@@ -632,10 +978,16 @@ if (!isAdmin()) {
                     application_id: currentModalId,
                     action: action,
                     recommendation_reason: getVal('recommendation_reason_' + currentModalId),
+                    recommendation_name: getVal('recommendation_name_' + currentModalId),
+                    recommendation_position: getVal('recommendation_position_' + currentModalId),
+                    certification_officer_name: getVal('certification_officer_name_' + currentModalId),
+                    certification_officer_position: getVal('certification_officer_position_' + currentModalId),
                     days_with_pay: getVal('days_with_pay_' + currentModalId),
                     days_without_pay: getVal('days_without_pay_' + currentModalId),
                     others_specify: getVal('others_specify_' + currentModalId),
                     disapproved_due_to: getVal('disapproved_due_to_' + currentModalId),
+                    final_action_name: getVal('final_action_name_' + currentModalId),
+                    final_action_position: getVal('final_action_position_' + currentModalId),
                     admin_remarks: getVal('admin_remarks_' + currentModalId)
                 };
 
@@ -669,8 +1021,18 @@ if (!isAdmin()) {
                 var saved = savedFields();
                 latestRequests = requests || [];
 
-                if (!requests || requests.length === 0) {
+                populateLeaveTypeFilter(latestRequests);
+                updateStatusCounts(latestRequests);
+
+                if (!latestRequests.length) {
                     wrap.innerHTML = '<div class="empty-state">No leave requests to review.</div>';
+                    return;
+                }
+
+                var filteredRequests = applyRequestFilters(latestRequests);
+
+                if (!filteredRequests || filteredRequests.length === 0) {
+                    wrap.innerHTML = '<div class="empty-state">No leave requests match your filters.</div>';
                     return;
                 }
 
@@ -690,7 +1052,7 @@ if (!isAdmin()) {
                         '</thead>' +
                         '<tbody>';
 
-                requests.forEach(function (req) {
+                filteredRequests.forEach(function (req) {
                     var id = parseInt(req.id, 10);
                     var name = esc((req.last_name || '') + ', ' + (req.first_name || ''));
                     var half = parseInt(req.is_half_day, 10) === 1 ? ' half-day' : '';
@@ -716,12 +1078,19 @@ if (!isAdmin()) {
                             '<td>' + statusBadge(req.status || '') + '</td>' +
 
                             '<td>' +
-                                '<div class="actions">' +
-                                    '<button type="button" class="icon-btn view-btn" title="View" data-open-id="' + id + '">⊙</button>' +
-                                    '<button type="button" class="icon-btn edit-btn" title="Action Details" data-open-id="' + id + '">✎</button>' +
-                                    '<button type="button" class="icon-btn delete-btn" title="Reject" data-quick-id="' + id + '" data-quick-action="reject">▱</button>' +
-                                '</div>' +
-                            '</td>' +
+    '<div class="actions">' +
+
+        '<button type="button" class="icon-btn view-btn" ' +
+        'title="View" data-view-id="' + id + '">👁</button>' +
+
+        '<button type="button" class="icon-btn edit-btn" ' +
+        'title="Update" data-edit-id="' + id + '">✏️</button>' +
+
+        '<button type="button" class="icon-btn delete-btn" ' +
+        'title="Delete" data-delete-id="' + id + '">🗑️</button>' +
+
+    '</div>' +
+'</td>'+
                         '</tr>';
                 });
 
@@ -730,31 +1099,101 @@ if (!isAdmin()) {
                 wrap.innerHTML = html;
                 restoreFields(saved);
 
-                wrap.querySelectorAll('button[data-open-id]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var id = parseInt(btn.getAttribute('data-open-id'), 10);
+/* VIEW */
+wrap.querySelectorAll('[data-view-id]').forEach(function(btn){
 
-                        var req = latestRequests.find(function (r) {
-                            return parseInt(r.id, 10) === id;
-                        });
+    btn.addEventListener('click', function(){
 
-                        if (req) {
-                            openModal(req);
-                        }
-                    });
-                });
+        var id = parseInt(btn.dataset.viewId, 10);
 
-                wrap.querySelectorAll('button[data-quick-id]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var id = parseInt(btn.getAttribute('data-quick-id'), 10);
+        var req = latestRequests.find(function(r){
+            return parseInt(r.id,10) === id;
+        });
 
-                        var req = latestRequests.find(function (r) {
-                            return parseInt(r.id, 10) === id;
-                        });
+        if(req){
+            openModal(req);
+        }
+    });
+});
 
-                        if (req) {
-                            openModal(req);
-                        }
+/* UPDATE */
+wrap.querySelectorAll('[data-edit-id]').forEach(function(btn){
+
+    btn.addEventListener('click', function(){
+
+        var id = parseInt(btn.dataset.editId, 10);
+
+        var req = latestRequests.find(function(r){
+            return parseInt(r.id,10) === id;
+        });
+
+        if(req){
+            openModal(req);
+        }
+    });
+});
+
+/* DELETE */
+wrap.querySelectorAll('[data-delete-id]').forEach(function(btn){
+
+    btn.addEventListener('click', async function(){
+
+        var id = parseInt(btn.dataset.deleteId,10);
+
+        if(!confirm(
+            'Delete this leave request?\n\n' +
+            'This is a SOFT DELETE and can be restored later.'
+        )){
+            return;
+        }
+
+        var res = await LSApi.post(
+            'admin/leave_requests.php',
+            {
+                application_id: id,
+                action: 'soft_delete'
+            }
+        );
+
+        if(res.data && res.data.success){
+
+            okEl.textContent =
+                res.data.message || 'Deleted';
+
+            okEl.classList.add('show');
+
+            render(res.data.requests || []);
+
+        } else {
+
+            errEl.textContent =
+                res.data.message || 'Delete failed';
+
+            errEl.classList.add('show');
+        }
+    });
+});            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', refreshTable);
+            }
+            if (leaveTypeFilter) {
+                leaveTypeFilter.addEventListener('change', refreshTable);
+            }
+            if (dateFromFilter) {
+                dateFromFilter.addEventListener('change', refreshTable);
+            }
+            if (dateToFilter) {
+                dateToFilter.addEventListener('change', refreshTable);
+            }
+            if (clearFiltersBtn) {
+                clearFiltersBtn.addEventListener('click', resetFilters);
+            }
+            if (statusNav) {
+                statusNav.querySelectorAll('.status-tab').forEach(function (tab) {
+                    tab.addEventListener('click', function () {
+                        setActiveStatusTab(tab.dataset.status || '');
+                        refreshTable();
                     });
                 });
             }
@@ -774,21 +1213,10 @@ if (!isAdmin()) {
 
                 if (window.LSLive) {
                     LSLive.pollGet('admin/leave_requests.php', 8000, function (data) {
-                        var openId = currentModalId;
-
-                        render(data.requests || []);
-
-                        if (openId) {
-                            var req = (data.requests || []).find(function (r) {
-                                return parseInt(r.id, 10) === openId;
-                            });
-
-                            if (req) {
-                                openModal(req);
-                            } else {
-                                closeModal();
-                            }
+                        if (currentModalId !== null) {
+                            return;
                         }
+                        render(data.requests || []);
                     });
                 }
             })();

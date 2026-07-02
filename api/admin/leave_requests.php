@@ -6,47 +6,6 @@ require_once __DIR__ . '/../_bootstrap.php';
 require_once __DIR__ . '/../../includes/leave_applicant_schema.php';
 ensure_leave_applicant_columns($pdo);
 /**
- * Build full display name from user row.
- */
-function admin_leave_user_full_name(array $row): string
-{
-    $parts = [
-        trim((string)($row['first_name'] ?? '')),
-        trim((string)($row['middle_name'] ?? '')),
-        trim((string)($row['last_name'] ?? '')),
-    ];
-
-    $parts = array_values(array_filter($parts, static fn($v) => $v !== ''));
-    return trim(implode(' ', $parts));
-}
-
-/**
- * Get admin display details for certification snapshot fallback.
- *
- * @return array{name:string|null, position:string|null}
- */
-function admin_leave_get_admin_identity(PDO $pdo, int $adminId): array
-{
-    $stmt = $pdo->prepare("
-        SELECT first_name, middle_name, last_name, position
-        FROM users
-        WHERE id = ?
-        LIMIT 1
-    ");
-    $stmt->execute([$adminId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$row) {
-        return ['name' => null, 'position' => null];
-    }
-
-    return [
-        'name' => admin_leave_user_full_name($row) ?: null,
-        'position' => trim((string)($row['position'] ?? '')) ?: null,
-    ];
-}
-
-/**
  * Lock and get latest leave credit row for teacher.
  */
 function admin_leave_get_latest_credit_row_for_update(PDO $pdo, int $teacherId): ?array
@@ -189,7 +148,11 @@ function admin_leave_request_action(PDO $pdo, int $adminId, array $input): array
         return ['ok' => false, 'message' => 'Invalid request.'];
     }
 
-    if (!in_array($action, ['approve', 'reject', 'update_action'], true)) {
+    if (!in_array(
+    $action,
+    ['approve', 'reject', 'update_action', 'soft_delete'],
+    true
+)) {
         return ['ok' => false, 'message' => 'Invalid action.'];
     }
 
@@ -247,11 +210,31 @@ function admin_leave_request_action(PDO $pdo, int $adminId, array $input): array
             }
         }
 
-        $adminIdentity = admin_leave_get_admin_identity($pdo, $adminId);
+        $finalOfficerName = $certificationOfficerName !== '' ? $certificationOfficerName : null;
+        $finalOfficerPosition = $certificationOfficerPosition !== '' ? $certificationOfficerPosition : null;
 
-        $finalOfficerName = $certificationOfficerName !== '' ? $certificationOfficerName : ($adminIdentity['name'] ?? null);
-        $finalOfficerPosition = $certificationOfficerPosition !== '' ? $certificationOfficerPosition : ($adminIdentity['position'] ?? null);
+        $finalRecName = $recommendationName !== '' ? $recommendationName : null;
+        $finalRecPosition = $recommendationPosition !== '' ? $recommendationPosition : null;
 
+        $finalActName = $finalActionName !== '' ? $finalActionName : null;
+        $finalActPosition = $finalActionPosition !== '' ? $finalActionPosition : null;
+if ($action === 'soft_delete') {
+
+    $stmt = $pdo->prepare("
+        UPDATE leave_applications
+        SET deleted_at = NOW()
+        WHERE id = ?
+    ");
+
+    $stmt->execute([$id]);
+
+    $pdo->commit();
+
+    return [
+        'ok' => true,
+        'message' => 'Request deleted successfully.'
+    ];
+}
         if ($action === 'update_action') {
             if (!in_array($currentStatus, ['approved', 'rejected'], true)) {
                 throw new Exception('Only processed requests can be updated.');
@@ -302,10 +285,10 @@ function admin_leave_request_action(PDO $pdo, int $adminId, array $input): array
                 ':others_specify' => $othersSpecify ?: null,
                 ':disapproved_due_to' => $disapprovedDueTo ?: null,
                 ':rejected_reason' => ($currentStatus === 'rejected') ? ($disapprovedDueTo ?: $adminRemarks ?: null) : null,
-                ':recommendation_name' => $recommendationName ?: null,
-                ':recommendation_position' => $recommendationPosition ?: null,
-                ':final_action_name' => $finalActionName ?: null,
-                ':final_action_position' => $finalActionPosition ?: null,
+                ':recommendation_name' => $finalRecName,
+                ':recommendation_position' => $finalRecPosition,
+                ':final_action_name' => $finalActName,
+                ':final_action_position' => $finalActPosition,
                 ':id' => $id,
             ]);
 
@@ -419,10 +402,10 @@ function admin_leave_request_action(PDO $pdo, int $adminId, array $input): array
                 ':days_with_pay' => $daysWithPay,
                 ':days_without_pay' => $daysWithoutPay,
                 ':others_specify' => $othersSpecify ?: null,
-                ':recommendation_name' => $recommendationName ?: null,
-                ':recommendation_position' => $recommendationPosition ?: null,
-                ':final_action_name' => $finalActionName ?: null,
-                ':final_action_position' => $finalActionPosition ?: null,
+                ':recommendation_name' => $finalRecName,
+                ':recommendation_position' => $finalRecPosition,
+                ':final_action_name' => $finalActName,
+                ':final_action_position' => $finalActPosition,
                 ':admin_id' => $adminId,
                 ':id' => $id,
             ]);
@@ -539,10 +522,10 @@ function admin_leave_request_action(PDO $pdo, int $adminId, array $input): array
             ':days_without_pay' => $daysWithoutPay,
             ':others_specify' => $othersSpecify ?: null,
             ':disapproved_due_to' => $disapprovedDueTo ?: null,
-            ':recommendation_name' => $recommendationName ?: null,
-            ':recommendation_position' => $recommendationPosition ?: null,
-            ':final_action_name' => $finalActionName ?: null,
-            ':final_action_position' => $finalActionPosition ?: null,
+            ':recommendation_name' => $finalRecName,
+            ':recommendation_position' => $finalRecPosition,
+            ':final_action_name' => $finalActName,
+            ':final_action_position' => $finalActPosition,
             ':id' => $id,
         ]);
 
@@ -633,7 +616,7 @@ function admin_leave_requests_list(PDO $pdo): array
                 LIMIT 1
             )
         WHERE la.status IN ('pending', 'approved', 'rejected')
-        ORDER BY la.date_filed DESC, la.id DESC
+AND la.deleted_at IS NULL
     ");
 
     $rows = $requestsStmt->fetchAll(PDO::FETCH_ASSOC);
