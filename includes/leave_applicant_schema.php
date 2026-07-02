@@ -24,6 +24,7 @@ function ensure_leave_applicant_columns(PDO $pdo): void
         'applicant_department' => "ALTER TABLE leave_applications ADD COLUMN applicant_department VARCHAR(150) NULL AFTER applicant_employee_no",
         'applicant_position' => "ALTER TABLE leave_applications ADD COLUMN applicant_position VARCHAR(150) NULL AFTER applicant_department",
         'applicant_salary' => "ALTER TABLE leave_applications ADD COLUMN applicant_salary DECIMAL(12,2) NULL AFTER applicant_position",
+        'deleted_at' => "ALTER TABLE leave_applications ADD COLUMN deleted_at DATETIME NULL DEFAULT NULL",
     ];
 
     foreach ($wanted as $col => $sql) {

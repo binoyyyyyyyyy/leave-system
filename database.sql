@@ -71,7 +71,8 @@ CREATE TABLE `leave_applications` (
   `approval_name` varchar(255) DEFAULT NULL,
   `approval_position` varchar(255) DEFAULT NULL,
   `disapproval_name` varchar(255) DEFAULT NULL,
-  `disapproval_position` varchar(255) DEFAULT NULL
+  `disapproval_position` varchar(255) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
