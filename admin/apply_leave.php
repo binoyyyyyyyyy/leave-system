@@ -13,32 +13,204 @@ if (!isAdmin()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apply for Leave (Admin)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
-        .container { width: 90%; max-width: 950px; margin: 30px auto; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .topbar h1 { margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        h2 { margin-top: 25px; margin-bottom: 15px; font-size: 20px; color: #222; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; }
-        input[type="text"], input[type="date"], input[type="number"], input[type="email"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-        .alert { padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
-        .checkbox-group label, .radio-group label { font-weight: normal; margin-bottom: 0; }
-        .hidden { display: none; }
-        button { background: #28a745; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-size: 15px; }
-        button:hover { background: #218838; }
-        .muted { color: #666; font-size: 13px; }
-        .target-box { border: 1px solid #e3e8ef; border-radius: 8px; padding: 12px; margin-bottom: 14px; background: #f9fbff; }
-        .readonly { background: #f2f3f5 !important; color: #555; }
-        @media (max-width: 768px) { .row, .row-3 { grid-template-columns: 1fr; } }
-        .alert.hidden { display: none; }
-        button:disabled { opacity: 0.65; cursor: not-allowed; }
+        :root {
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bg-color: #f8fafc;
+            --accent-primary: #0f766e;
+            --accent-primary-hover: #115e59;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-focus-border: #0f766e;
+            --error-color: #991b1b;
+            --error-bg: #fef2f2;
+            --error-border: #fca5a5;
+            --success-color: #166534;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .topbar h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-card);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 32px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], input[type="email"], select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.15s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+        }
+
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .success { background: var(--success-bg); color: var(--success-color); border-color: var(--success-border); }
+        .error { background: var(--error-bg); color: var(--error-color); border-color: var(--error-border); }
+
+        .checkbox-group, .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-bottom: 0;
+            font-size: 14px;
+        }
+
+        .radio-group input[type="radio"], .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .hidden { display: none !important; }
+
+        button {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font-main);
+            transition: background 0.15s ease;
+            width: 100%;
+            margin-top: 32px;
+        }
+
+        button:hover {
+            background: var(--accent-primary-hover);
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .muted { color: var(--text-secondary); font-size: 14px; }
+        
+        .target-box {
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+        }
+
+        .readonly {
+            background: #f1f5f9 !important;
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .row, .row-3 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body data-api-base="../api/">

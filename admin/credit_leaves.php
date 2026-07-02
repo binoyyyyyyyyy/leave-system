@@ -12,53 +12,105 @@ if (!isAdmin()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Leave Credits</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; color: #333; }
-        .container { width: 92%; max-width: 1250px; margin: 30px auto; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
-        .topbar h1 { margin: 0; }
-        .card { background: white; padding: 22px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 18px; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; }
-        input[type="number"], select, input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #fff; }
-        button { color: #fff; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        :root {
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bg-color: #f8fafc;
+            --accent-primary: #0f766e;
+            --accent-primary-hover: #115e59;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-focus-border: #0f766e;
+            --error-color: #991b1b;
+            --error-bg: #fef2f2;
+            --error-border: #fca5a5;
+            --success-color: #166534;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --danger-bg: #ef4444;
+            --danger-hover: #dc2626;
+            --info-bg: #3b82f6;
+            --info-hover: #2563eb;
+            --warn-bg: #eab308;
+            --warn-hover: #ca8a04;
+            --secondary-bg: #64748b;
+            --secondary-hover: #475569;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { font-family: var(--font-main); background: var(--bg-color); margin: 0; padding: 0; color: var(--text-primary); }
+        .container { width: 92%; max-width: 1250px; margin: 40px auto; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+        .topbar h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+        
+        .card { background: var(--card-bg); padding: 32px; border-radius: 16px; border: 1px solid var(--card-border); box-shadow: var(--shadow-card); margin-bottom: 24px; }
+        .card h2 { margin-top: 0; font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary); }
+        input[type="number"], select, input[type="date"], input[type="text"] { width: 100%; min-height: 40px; padding: 10px 14px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 14px; box-sizing: border-box; background: var(--input-bg); font-family: var(--font-main); outline: none; transition: all 0.15s ease; }
+        input:focus, select:focus { border-color: var(--input-focus-border); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); }
+        input[readonly] { background: #f1f5f9; color: var(--text-secondary); border-color: var(--card-border); cursor: not-allowed; }
+
+        button { color: #fff; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: var(--font-main); transition: background 0.15s ease; }
         button:disabled { opacity: 0.65; cursor: not-allowed; }
-        .btn-primary { background: #007bff; }
-        .btn-save { background: #28a745; }
-        .btn-edit { background: #17a2b8; }
-        .btn-delete { background: #dc3545; }
-        .btn-close { background: #6c757d; }
-        .btn-reset { background: #6c757d; }
-        .muted { color: #666; font-size: 13px; }
-        .alert { padding: 12px 15px; border-radius: 6px; margin-bottom: 16px; display: none; }
+        .btn-primary { background: var(--accent-primary); }
+        .btn-primary:hover { background: var(--accent-primary-hover); }
+        .btn-save { background: var(--accent-primary); }
+        .btn-save:hover { background: var(--accent-primary-hover); }
+        .btn-edit { background: var(--info-bg); }
+        .btn-edit:hover { background: var(--info-hover); }
+        .btn-delete { background: var(--danger-bg); }
+        .btn-delete:hover { background: var(--danger-hover); }
+        .btn-close { background: var(--secondary-bg); }
+        .btn-close:hover { background: var(--secondary-hover); }
+        .btn-reset { background: var(--secondary-bg); }
+        .btn-reset:hover { background: var(--secondary-hover); }
+        
+        .muted { color: var(--text-secondary); font-size: 13px; margin-top: 6px; }
+        .alert { padding: 14px 16px; border-radius: 8px; margin-bottom: 24px; display: none; font-size: 14px; font-weight: 500; border: 1px solid transparent; }
         .alert.show { display: block; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
-        .stat-card { border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; background: #fafbfc; }
-        .stat-card .k { font-size: 12px; color: #666; margin-bottom: 4px; }
-        .stat-card .v { font-size: 18px; font-weight: bold; }
+        .success { background: var(--success-bg); color: var(--success-color); border-color: var(--success-border); }
+        .error { background: var(--error-bg); color: var(--error-color); border-color: var(--error-border); }
+        
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .table-wrap { overflow-x: auto; }
-        .filters { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; margin-bottom: 12px; align-items: end; }
+        .filters { display: grid; grid-template-columns: 2fr 1fr auto; gap: 16px; margin-bottom: 24px; align-items: end; }
+        .filters .form-group { margin-bottom: 0; }
         .filter-actions { display: flex; align-items: end; }
-        table { width: 100%; border-collapse: collapse; min-width: 1050px; font-size: 14px; }
-        th, td { border-bottom: 1px solid #eee; text-align: left; padding: 10px 8px; vertical-align: top; }
-        th { background: #fafafa; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1050px; font-size: 14px; }
+        th, td { border-bottom: 1px solid var(--card-border); text-align: left; padding: 14px 12px; vertical-align: middle; }
+        th { background: #f8fafc; font-weight: 600; font-size: 12px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; border-bottom: 2px solid var(--card-border); }
+        tbody tr { transition: background 0.15s ease; }
+        tbody tr:hover { background: #f1f5f9; }
+        
         .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .empty { text-align: center; color: #666; padding: 18px; }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: bold; text-transform: capitalize; }
-        .badge-admin { background: #d1ecf1; color: #0c5460; }
-        .badge-teacher { background: #e2e3e5; color: #383d41; }
-        .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 999; overflow-y: auto; padding: 20px; }
-        .modal-backdrop.open { display: block; }
-        .modal { background: #fff; max-width: 900px; margin: 20px auto; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 20px; }
-        .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .modal-head h2 { margin: 0; font-size: 1.2rem; }
+        .empty { text-align: center; color: var(--text-secondary); padding: 40px; font-size: 15px; }
+        
+        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; white-space: nowrap; }
+        .badge-admin { background: #dbeafe; color: #1e40af; }
+        .badge-teacher { background: #f1f5f9; color: #475569; }
+        
+        .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; overflow-y: auto; padding: 20px; }
+        .modal-backdrop.open { display: flex; align-items: flex-start; justify-content: center; }
+        .modal { background: var(--card-bg); max-width: 900px; width: 100%; margin: 40px auto; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px; box-sizing: border-box; }
+        .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border); }
+        .modal-head h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+        
         @media (max-width: 900px) {
             .grid { grid-template-columns: 1fr; }
-            .stat-grid { grid-template-columns: 1fr; }
             .filters { grid-template-columns: 1fr; }
+            .filter-actions button { width: 100%; }
         }
     </style>
 </head>
