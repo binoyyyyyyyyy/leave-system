@@ -609,8 +609,9 @@ $disapprovedDueTo = trim((string)($row['disapproved_due_to'] ?? ''));
         <button type="button" class="download-btn" id="download_btn">Download PDF</button>
         <a href="leave_requests.php" class="back-btn">Back</a>
         <p class="print-hint">
-            To remove the URL and page number at the bottom, open <strong>More settings</strong> in the print dialog
-            and turn off <strong>Headers and footers</strong>.
+            <strong>Print Form</strong> opens your browser print dialog.
+            <strong>Download PDF</strong> saves the form directly as a PDF file.
+            To remove the URL and page number when printing, open <strong>More settings</strong> and turn off <strong>Headers and footers</strong>.
         </p>
     </div>
 
@@ -868,13 +869,66 @@ $disapprovedDueTo = trim((string)($row['disapproved_due_to'] ?? ''));
         </table>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     <script>
         (function () {
             var printBtn = document.getElementById('print_btn');
             var downloadBtn = document.getElementById('download_btn');
+            var pdfFilename = <?php echo json_encode('leave-form-' . $id . '.pdf', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 
             function printForm() {
                 window.print();
+            }
+
+            function downloadPdf() {
+                var paper = document.querySelector('.paper');
+
+                if (!paper) {
+                    alert('Form content not found.');
+                    return;
+                }
+
+                if (typeof html2pdf !== 'function') {
+                    alert('PDF library failed to load. Please refresh the page and try again.');
+                    return;
+                }
+
+                var originalText = downloadBtn.textContent;
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = 'Generating PDF...';
+
+                var options = {
+                    margin: 0,
+                    filename: pdfFilename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        letterRendering: true,
+                        scrollX: 0,
+                        scrollY: -window.scrollY
+                    },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'portrait'
+                    },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                html2pdf()
+                    .set(options)
+                    .from(paper)
+                    .save()
+                    .then(function () {
+                        downloadBtn.disabled = false;
+                        downloadBtn.textContent = originalText;
+                    })
+                    .catch(function () {
+                        downloadBtn.disabled = false;
+                        downloadBtn.textContent = originalText;
+                        alert('Could not generate the PDF. Please try again or use Print Form and save as PDF.');
+                    });
             }
 
             if (printBtn) {
@@ -882,7 +936,7 @@ $disapprovedDueTo = trim((string)($row['disapproved_due_to'] ?? ''));
             }
 
             if (downloadBtn) {
-                downloadBtn.addEventListener('click', printForm);
+                downloadBtn.addEventListener('click', downloadPdf);
             }
         })();
     </script>
