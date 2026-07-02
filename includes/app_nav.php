@@ -31,8 +31,8 @@ function render_app_nav(string $role, string $current = ''): void
         top: 0;
         z-index: 1000;
         background: #ffffff;
-        border-bottom: 1px solid #e8e8e8;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        border-bottom: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .app-nav-inner {
         width: 95%;
@@ -41,16 +41,19 @@ function render_app_nav(string $role, string $current = ''): void
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 16px;
         flex-wrap: wrap;
-        padding: 10px 0;
+        padding: 14px 0;
     }
     .app-nav-brand {
-        font-family: Arial, sans-serif;
-        font-size: 15px;
-        font-weight: bold;
-        color: #1f2d3d;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f766e;
         text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     .app-nav-links {
         display: flex;
@@ -60,28 +63,43 @@ function render_app_nav(string $role, string $current = ''): void
     }
     .app-nav-link {
         text-decoration: none;
-        font-family: Arial, sans-serif;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 13px;
-        padding: 7px 11px;
-        border-radius: 999px;
-        color: #34495e;
-        background: #f6f8fb;
-        border: 1px solid #e3e8ef;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 6px;
+        color: #475569;
+        background: transparent;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+    }
+    .app-nav-link:hover {
+        color: #0f172a;
+        background: #f1f5f9;
+        border-color: #e2e8f0;
     }
     .app-nav-link.active {
-        color: #fff;
-        background: #007bff;
-        border-color: #007bff;
+        color: #ffffff;
+        background: #0f766e;
+        border-color: #0f766e;
+        font-weight: 600;
     }
     .app-nav-logout {
         text-decoration: none;
-        font-family: Arial, sans-serif;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 13px;
-        padding: 7px 11px;
-        border-radius: 999px;
-        color: #fff;
-        background: #d9534f;
-        border: 1px solid #d9534f;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 6px;
+        color: #b91c1c;
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        transition: all 0.15s ease;
+    }
+    .app-nav-logout:hover {
+        color: #ffffff;
+        background: #dc2626;
+        border-color: #dc2626;
     }
 </style>
 
