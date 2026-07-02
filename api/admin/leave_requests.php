@@ -598,6 +598,8 @@ function admin_leave_requests_list(PDO $pdo): array
             la.days_without_pay,
             la.others_specify,
             la.disapproved_due_to,
+            la.created_at,
+            la.date_filed AS date_requested,
 
             lc.as_of_date AS live_as_of_date,
             lc.vacation_total_earned AS live_vacation_total_earned,
@@ -616,7 +618,8 @@ function admin_leave_requests_list(PDO $pdo): array
                 LIMIT 1
             )
         WHERE la.status IN ('pending', 'approved', 'rejected')
-AND la.deleted_at IS NULL
+        AND la.deleted_at IS NULL
+        ORDER BY la.created_at DESC, la.id DESC
     ");
 
     $rows = $requestsStmt->fetchAll(PDO::FETCH_ASSOC);
